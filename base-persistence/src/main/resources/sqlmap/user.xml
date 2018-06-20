@@ -1,0 +1,255 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="org.base.persistence.user.dao.UserDao">
+
+<resultMap id="userDOResult" type="org.base.persistence.user.domain.UserDO">
+    <result column="name" property="name"/>
+    <result column="id" property="id"/>
+    <result column="gmt_create" property="gmtCreate"/>
+    <result column="gmt_modified" property="gmtModified"/>
+</resultMap>
+
+<sql id="userDO_columns">
+    name,
+    id,
+    gmt_create,
+    gmt_modified
+</sql>
+
+<sql id="userDO_sqlForInsert">
+    name,
+    id,
+    gmt_create,
+    gmt_modified
+</sql>
+
+<sql id="userDO_columnsForInsert">
+    #{name},
+    #{id},
+    now(),
+    now()
+</sql>
+
+<sql id="userDO_setterForUpdate">
+    <set>
+        gmt_modified = now(),
+        <if test="name != null">
+            name = #{name},
+        </if>
+    </set>
+</sql>
+
+<sql id="userDO_selector">
+    select
+    <include refid="userDO_columns"/>
+    from sc_demo
+</sql>
+
+<sql id="userDO_query_segment">
+    <trim prefix="WHERE" prefixOverrides="AND|OR">
+        <if test="data.name != null">
+            AND name = #{data.name}
+        </if>
+        <if test="data.id != null">
+            AND id = #{data.id}
+        </if>
+        <if test="data.gmtCreate != null">
+            AND gmt_create = #{data.gmtCreate}
+        </if>
+        <if test="data.gmtModified != null">
+            AND gmt_modified = #{data.gmtModified}
+        </if>
+        <if test="ins != null and ins != ''">
+            AND
+            <foreach collection="ins" item="item" open="(" separator="and" close=")">
+                ${item.column} in
+                <foreach collection="item.values" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </foreach>
+        </if>
+        <if test="notIns != null and notIns != ''">
+            AND
+            <foreach collection="notIns" item="item" open="(" separator="and" close=")">
+                ${item.column} not in
+                <foreach collection="item.values" item="item" open="(" separator="," close=")">
+                    #{item}
+                </foreach>
+            </foreach>
+        </if>
+        <if test="equals != null and equals != ''">
+            AND
+            <foreach collection="equals" item="item" open="(" separator="and" close=")">
+                ${item.column} = #{item.value}
+            </foreach>
+        </if>
+        <if test="notEquals != null and notEquals != ''">
+            AND
+            <foreach collection="notEquals" item="item" open="(" separator="and" close=")">
+                ${item.column} <![CDATA[ <> ]]> #{item.value}
+            </foreach>
+        </if>
+        <if test="lts != null and lts != ''">
+            AND
+            <foreach collection="lts" item="item" open="(" separator="and" close=")">
+                ${item.column} <![CDATA[ < ]]> #{item.value}
+            </foreach>
+        </if>
+        <if test="gts != null and gts != ''">
+            AND
+            <foreach collection="gts" item="item" open="(" separator="and" close=")">
+                ${item.column} <![CDATA[ > ]]> #{item.value}
+            </foreach>
+        </if>
+        <if test="likes != null and likes != ''">
+            AND
+            <foreach collection="likes" item="item" open="(" separator="and" close=")">
+                ${item.column} like concat('%', #{item.value}, '%')
+            </foreach>
+        </if>
+        <if test="ltes != null and ltes != ''">
+            AND
+            <foreach collection="ltes" item="item" open="(" separator="and" close=")">
+                ${item.column} <![CDATA[ <= ]]> #{item.value}
+            </foreach>
+        </if>
+        <if test="gtes != null and gtes != ''">
+            AND
+            <foreach collection="gtes" item="item" open="(" separator="and" close=")">
+                ${item.column} <![CDATA[ >= ]]> #{item.value}
+            </foreach>
+        </if>
+        <if test="ranges != null and ranges != ''">
+            AND
+            <foreach collection="ranges" item="item" open="(" separator="and" close=")">
+                ${item.column} <![CDATA[ >= ]]> #{item.from} and ${item.column} <![CDATA[ < ]]> #{item.to}
+            </foreach>
+        </if>
+        AND is_delete = 0
+    </trim>
+</sql>
+
+
+<insert id="insert" useGeneratedKeys="true" keyProperty="id" parameterType="org.base.persistence.user.domain.UserDO">
+    insert into sc_demo
+    (
+        <include refid="userDO_sqlForInsert"/>
+        ,is_delete
+    )
+    values
+    (
+        <include refid="userDO_columnsForInsert"/>
+        ,0
+    )
+</insert>
+
+<update id="update" parameterType="org.base.persistence.user.domain.UserDO">
+    update sc_demo
+    <include refid="userDO_setterForUpdate" />
+    where id = #{id}
+    and is_delete = 0
+</update>
+
+
+<update id="updateByQuery" parameterType="org.base.persistence.user.domain.UserDO">
+    update sc_demo
+    <set>
+        gmt_modified = now(),
+        <if test="update.name != null">
+            name = #{update.name},
+        </if>
+    </set>
+    <include refid="userDO_query_segment"/>
+</update>
+
+
+<insert id="insertOrUpdate" useGeneratedKeys="true" keyProperty="id" parameterType="org.base.persistence.user.domain.UserDO">
+    insert into sc_demo
+    (
+        <include refid="userDO_sqlForInsert"/>
+        ,is_delete
+    )
+    values
+    (
+        <include refid="userDO_columnsForInsert"/>
+        ,0
+    )
+    on duplicate key update
+    gmt_modified = now()
+    ,is_delete = 0
+    <if test="name != null">
+        ,name = #{name}
+    </if>
+</insert>
+
+<!-- Delete -->
+<update id="delete">
+    update sc_demo
+    set is_delete = 1, gmt_modified = now()
+    <include refid="userDO_query_segment"/>
+</update>
+<update id="deleteById">
+    update sc_demo
+    set is_delete = 1, gmt_modified = now()
+    where id = #{id}
+</update>
+
+
+
+
+
+<!-- query class -->
+<sql id="userDO_groupBy">
+    <if test="groupBys != null and groupBys != ''">
+        group by
+        <foreach collection="groupBys" item="item" open="" separator="," close="">
+            #{item}
+        </foreach>
+    </if>
+</sql>
+
+<sql id="userDO_orderby">
+    <if test="orderBys != null and orderBys != ''">
+        order by
+        <foreach collection="orderBys" item="item" open="" separator="," close="">
+            ${item.column} ${item.direction}
+        </foreach>
+    </if>
+</sql>
+
+
+<select id="query" resultMap="userDOResult" parameterType="org.base.persistence.user.domain.UserDO">
+    <include refid="userDO_selector"/>
+    <include refid="userDO_query_segment"/>
+    <include refid="userDO_groupBy"/>
+    <include refid="userDO_orderby"/>
+</select>
+
+<select id="query4Page" resultMap="userDOResult" parameterType="org.base.persistence.user.domain.UserDO">
+    <include refid="userDO_selector"/>
+    <include refid="userDO_query_segment"/>
+    <include refid="userDO_groupBy"/>
+    <include refid="userDO_orderby"/>
+    limit ${startRowForMysql}, ${pageSize}
+</select>
+
+
+<select id="count" resultType="java.lang.Long">
+    SELECT COUNT(1) FROM sc_demo
+    <include refid="userDO_query_segment"/>
+</select>
+
+<select id="getById" resultMap="userDOResult">
+    <include refid="userDO_selector"/>
+    where id = #{id}
+    and is_delete = 0
+</select>
+
+<select id="getByIdForUpdate" resultMap="userDOResult">
+    <include refid="userDO_selector"/>
+    where id = #{id}
+    and is_delete = 0
+    for update
+</select>
+
+</mapper>
